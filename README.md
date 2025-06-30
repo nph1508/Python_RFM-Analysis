@@ -1,1 +1,1 @@
-# Python_RFM-Analysis
+# Python for Customer Segmentation: RFM Analysis for Marketing Strategy
