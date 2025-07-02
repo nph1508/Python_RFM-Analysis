@@ -1,4 +1,4 @@
-# Python for Customer Segmentation: RFM Analysis for Marketing Strategy
+# Customer Segmentation using RFM Analysis for Marketing Strategy | Python
 
 Author: Nguyễn Phương Huy
 
