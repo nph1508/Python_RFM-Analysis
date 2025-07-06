@@ -1,10 +1,12 @@
 # Customer Segmentation using RFM Analysis for Marketing Strategy | Python
 
-Author: Nguyễn Phương Huy
+<img src="https://github.com/user-attachments/assets/52fc6a5a-1861-4842-bf42-4fa4ff5e6a13" width="100%" />
 
-Date: 2000-15-08
+**Author:** Nguyễn Phương Huy
 
-Tools Used: Python
+**Date:** June 2025
+
+**Tools Used:** Python
 
 ---
 ## 📑 Table of Contents
