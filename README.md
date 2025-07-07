@@ -1,4 +1,4 @@
-# Customer Segmentation using RFM Analysis for Marketing Strategy | Python
+# 🛒 Customer Segmentation using RFM Analysis for Marketing Strategy | Python
 
 <img src="https://github.com/user-attachments/assets/52fc6a5a-1861-4842-bf42-4fa4ff5e6a13" width="100%" />
 
@@ -11,11 +11,16 @@
 ---
 ## 📑 Table of Contents
 
-1. [📌 Background & Overview](#-background--overview)  
-2. [📂 Dataset Description & Data Structure](#-dataset-description--data-structure)  
-3. [🔎 Final Conclusion & Recommendations](#-final-conclusion--recommendations)
----
-## 📌 Background & Overview
+[1. 📌 Background & Overview](#1--background--overview)  
+[2. 📂 Dataset Description & Data Structure](#2--dataset-description--data-structure)  
+[3. 🧹 Data Cleaning & Preprocessing](#3--data-cleaning--preprocessing)  
+[4. 🔍 Exploratory Data Analysis (EDA)](#4--exploratory-data-analysis-eda)  
+[5. 🧮 Apply RFM Model](#5--apply-rfm-model)  
+[6. 📊 Visualization & Analysis](#6--visualization--analysis)  
+[7. 💡 Insight & Recommendation](#7--insight--recommendation)  
+
+--- 
+## 1. 📌 Background & Overview
 ### 🎯 Objective 
 
 **📖 What is this project about?**  
@@ -48,7 +53,7 @@ RFM (Recency, Frequency, Monetary) is a customer analysis technique based on pur
 By applying RFM, businesses can segment customers based on their value, allowing them to optimize marketing and customer engagement strategies.  
 
 ---
-## 📂 Dataset Description & Data Structure
+## 2. 📂 Dataset Description & Data Structure
 
 ### 📌 Data Source  
 - **Source**: Provided dataset for E-commerce retail analysis  
