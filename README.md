@@ -108,26 +108,166 @@ The dataset consists of **two tables (sheets)**:
 | **Lost Customers**       | 111, 112, 121, 131, 141, 151   |
 
 </details>
+
 ---
 
-## ⚒️Main Process
-### 1️⃣ Data Cleaning & Preprocessing
-
-**📌 Code Purpose:**  
-- Remove duplicate rows (`duplicated()`)  
-- Drop entries with missing `CustomerID`  
-- Filter out canceled orders with `Quantity < 0`
-
-**🧪 Sample Code:**
+## 3. 🧹 Data Cleaning & Preprocessing
+[In 1]:  
 ```python
-ecommerce_retail.dropna(subset=["CustomerID"], inplace=True)
-ecommerce_retail = ecommerce_retail[ecommerce_retail["Quantity"] > 0]
-print("Duplicates:", ecommerce_retail.duplicated().sum())
+# Print the first five rows of the dataset
+ecommerce_retail.head()
 ```
-🧠 Observations:
-- Around 25% of records had missing CustomerID and were removed
-- Negative Quantity values represent canceled orders and were excluded
-- Final dataset after cleaning contains ~392,000 records
+
+[Out 1]: 
+
+<img width="1053" height="199" alt="Ảnh màn hình 2025-07-13 lúc 11 09 48" src="https://github.com/user-attachments/assets/2b165c99-b3ac-4cf0-9417-93da3b3c1511" />
+
+[In 2]:  
+```python
+# Check the general information of df
+ecommerce_retail.info()
+```
+[Out 2]:
+
+<img width="526" height="325" alt="Ảnh màn hình 2025-07-13 lúc 11 11 52" src="https://github.com/user-attachments/assets/cde2e286-7da1-40d4-8845-95ddaad86a1f" />
+
+[In 3]:
+```python
+# Check Data Summary
+ecommerce_retail.describe()
+```
+[Out 3]:
+
+<img width="616" height="303" alt="Ảnh màn hình 2025-07-13 lúc 11 12 12" src="https://github.com/user-attachments/assets/0ed8348d-5f22-40d8-bd91-70fd0d5ff980" />
+
+### 🧹 Data Cleaning Summary
+
+- ❌ Removed transactions with **missing `CustomerID`**  
+- ❌ Removed rows with **`Quantity` ≤ 0 or `UnitPrice` ≤ 0** (likely returns or cancellations)  
+- ✅ Removed duplicate records  
+- 🧮 Created new column `TotalPrice = Quantity × UnitPrice`  
+- 🔄 Reset index after cleaning  
+- 🔢 Converted `CustomerID` to string to avoid decimal formatting
+
+### 🧐 Reasons for Data Exclusion
+
+- **Missing `CustomerID`**:  
+  - Likely caused by guest checkouts, offline orders, or anonymous purchases  
+  - Cannot be used to track customer behavior  
+  - Accounted for ~25% of the data → dropped entirely
+
+- **Negative `Quantity` or `UnitPrice`**:  
+  - Indicates returns, refunds, or test transactions  
+  - Not relevant for customer segmentation and spend behavior
+
+---
+
+## 4. 🔍 Exploratory Data Analysis (EDA)
+### 🛠 Data Cleaning
+```python
+ecommerce_retail = ecommerce_retail.dropna(subset=['CustomerID'])
+ecommerce_retail['CustomerID'] = ecommerce_retail['CustomerID'].astype(int).astype(str)
+ecommerce_retail = ecommerce_retail[(ecommerce_retail['Quantity'] > 0) & (ecommerce_retail['UnitPrice'] > 0)]
+ecommerce_retail = ecommerce_retail.drop_duplicates()
+ecommerce_retail['TotalPrice'] = ecommerce_retail['Quantity'] * ecommerce_retail['UnitPrice']
+ecommerce_retail.reset_index(drop=True, inplace=True)
+```
+### ✅ Data Quality After Cleaning
+- ✔ No missing values in relevant fields  
+- ✔ No duplicates  
+- ✔ All transaction values are valid and positive  
+- ✔ Ready for RFM metric generation (Recency, Frequency, Monetary)
+
+---
+
+## 5. 🧮 Apply RFM Model
+
+#### 🛠 Step 1. Calculate RFM Score
+
+[In 8]:
+
+```python
+rfm = ecommerce_retail.groupby('CustomerID').agg({
+    'InvoiceDate': lambda x: (snapshot_date - x.max()).days,   # Recency
+    'InvoiceNo': 'nunique',                                    # Frequency
+    'TotalPrice': 'sum'                                        # Monetary
+}).reset_index()
+
+rfm.columns = ['CustomerID', 'Recency', 'Frequency', 'Monetary']
+```
+#### 🛠 Step 2. Check outlier
+
+In 9]:
+
+```python
+plt.figure(figsize=(12,4))
+for i, col in enumerate(['Recency', 'Frequency', 'Monetary']):
+    plt.subplot(1,3,i+1)
+    sns.boxplot(y=rfm[col])
+    plt.title(col)
+plt.tight_layout()
+plt.show()
+```
+[Out 9]:
+
+<img width="1189" height="390" alt="image" src="https://github.com/user-attachments/assets/b619ea3e-962c-489e-b05b-b50ef9be514a" />
+
+
+**📌 Solution**
+We set a 95% threshold for **Recency**, **Frequency**, and **Monetary** to remove extreme values (outliers) from the dataset. This ensures that the analysis focuses on the majority of the data, improving its reliability for further insights.
+
+#### 🛠 Step 3. Assign RFM scores using Qcut
+
+[In 10]:
+
+```python
+# Recency score: Lower values indicate more recent purchases, so assign higher scores to lower recency values  
+rfm['R_Score'] = pd.qcut(rfm['Recency'], 5, labels=[5,4,3,2,1]).astype(int)
+# Frequency score: Higher values indicate more frequent purchases, so assign higher scores to higher frequency values  
+rfm['F_Score'] = pd.qcut(rfm['Frequency'].rank(method='first'), 5, labels=[1,2,3,4,5]).astype(int)
+# Monetary score: Higher values indicate higher spending, so assign higher scores to higher monetary values  
+rfm['M_Score'] = pd.qcut(rfm['Monetary'], 5, labels=[1,2,3,4,5]).astype(int)
+# Combine RFM scores into a single string to create the RFM segment  
+rfm['RFM_Score'] = rfm['R_Score'].astype(str) + rfm['F_Score'].astype(str) + rfm['M_Score'].astype(str)
+```
+#### 🛠 Step 4. Calculate RFM Score
+
+Process the segmentation table & merge with RFM_df
+
+[In 11]:
+
+```python
+segment_dict = {}
+for _, row in segmentation.iterrows():
+    scores = row['RFM Score'].replace(" ", "").split(',')
+    for score in scores:
+        segment_dict[score] = row['Segment']
+rfm['Segment'] = rfm['RFM_Score'].map(segment_dict)
+rfm
+```
+[Out 11]:
+
+<img width="833" height="417" alt="Ảnh màn hình 2025-07-13 lúc 11 38 12" src="https://github.com/user-attachments/assets/80a5d348-26f6-4f52-8e14-adbcbd5a9ace" />
+
+## 6. 📊 Visualization & Analysis
+### **1. Contribution by Segmentation**
+
+<img width="950" height="655" alt="image" src="https://github.com/user-attachments/assets/08bc1095-4093-414f-bb36-c4d5b41967fd" />
+
+### **2. Segmentation by Spending** 
+
+<img width="950" height="655" alt="image" src="https://github.com/user-attachments/assets/4ea70fce-12d1-4dde-a122-3419530e9b88" />
+
+
+### **3. Segmentation by Frequency** 
+
+<img width="1189" height="790" alt="image" src="https://github.com/user-attachments/assets/01b16eae-215f-43ee-968e-828ee0d4439f" />
+
+
+### **4. Segmentation by Recency** 
+
+<img width="1189" height="790" alt="image" src="https://github.com/user-attachments/assets/fc1d92d8-b146-4406-88da-7ada2d600418" />
+
 
 ### 2️⃣ Python Analysis – RFM Segmentation
 **📌 Code Purpose:**
