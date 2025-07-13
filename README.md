@@ -268,129 +268,90 @@ rfm
 
 <img width="1189" height="790" alt="image" src="https://github.com/user-attachments/assets/fc1d92d8-b146-4406-88da-7ada2d600418" />
 
-
-### 2️⃣ Python Analysis – RFM Segmentation
-**📌 Code Purpose:**
-- Compute RFM values per customer:
-  - Recency: Days since the last purchase
-  - Frequency: Total number of orders
-  - Monetary: Total amount spent
-- Score each metric from 1–5 using quantiles
-- Combine into RFM_Score and map to segments
-
-**🧪 Sample Code:**
-```python
-snapshot_date = datetime.datetime(2011, 12, 31)
-rfm = ecommerce_retail.groupby('CustomerID').agg({
-    'InvoiceDate': lambda x: (snapshot_date - x.max()).days,
-    'InvoiceNo': 'nunique', 
-    'TotalPrice': 'sum'
-}).reset_index()
-
-rfm.columns = ['CustomerID', 'Recency', 'Frequency', 'Monetary']
-```
-
-**📦 Boxplot – Outlier Detection:**
-```python
-plt.figure(figsize=(12,4))
-for i, col in enumerate(['Recency', 'Frequency', 'Monetary']):
-    plt.subplot(1,3,i+1)
-    sns.boxplot(y=rfm[col])
-    plt.title(col)
-plt.tight_layout()
-plt.show()
-```
-** ✅ Results:** 
-![image](https://github.com/user-attachments/assets/eb6be89f-6e3d-49fa-af35-3a6b3dea8b68)
-🧠 Observations:
-- **Recency**: This metric reflects actual customer behavior, so outliers should be kept — no filtering is recommended.
-- **Frequency**: Remove outliers to reduce the influence of resellers who purchase unusually often.
-- **Monetary**: Remove outliers to avoid distortion when calculating monetary scores.
-
-**🌳 Treemap of Customer Segments**
-<details>
-  <summary>📋 Click to view code</summary>
-  
-  ```python
-total_customers = rfm['CustomerID'].nunique()
-total_revenue = rfm['Monetary'].sum()
-
-rfm_segment_summary = rfm.groupby('Segment').agg({
-    'CustomerID': 'nunique',
-    'Monetary': 'sum'
-}).reset_index()
-
-rfm_segment_summary['Customer_%'] = round(rfm_segment_summary['CustomerID'] / total_customers * 100, 1)
-rfm_segment_summary['Revenue_%'] = round(rfm_segment_summary['Monetary'] / total_revenue * 100, 1)
-
-rfm_segment_summary['Label'] = (
-    rfm_segment_summary['Segment'] + '\n' +
-    'Cus: '+ rfm_segment_summary['Customer_%'].astype(str) + '% ' + '\n' +
-    'Rev: '+ rfm_segment_summary['Revenue_%'].astype(str) + '%'
-)
-
-segment_colors = {
-    'Champions': '#60C5BA',
-    'Loyal': '#4F9DED',
-    'Potential Loyalist': '#75C09E',
-    'New Customers': '#F6C24C',
-    'Promising': '#F59E42',
-    'Need Attention': '#D9534F',
-    'About To Sleep': '#E8A9A6',
-    'Hibernating customers': '#71D2C5',
-    'At Risk': '#E8B28C',
-    "Can't Lose Them": '#F5E05E',
-    'Lost customers': '#B0B0B0'
-}
-colors = [segment_colors[s] for s in rfm_segment_summary['Segment']]
-
-plt.figure(figsize=(14, 8))
-squarify.plot(
-    sizes=rfm_segment_summary['Customer_%'],
-    label=rfm_segment_summary['Label'],
-    color=colors,
-    text_kwargs={'fontsize': 14, 'fontproperties': 'DejaVu Serif', 'weight': 'normal', 'color': 'black'}
-)
-
-plt.title(
-    'Customer Segment Distribution: %Customer / %Revenue',
-    fontsize=16,
-    fontproperties='DejaVu Serif',
-    weight='bold'
-)
-
-plt.title('Customer Segment Distribution: %Customer / %Revenue', fontsize=16)
-plt.axis('off')
-plt.show()
-  ```
-</details>
-  
-** ✅ Results:** 
-![image](https://github.com/user-attachments/assets/14d1a6a4-2f72-4a74-b04a-43782f8bd203)
-🧠 Observations:
-- Majority of customers fall into **Hibernating, Lost**, or **At Risk** groups
-- **Champions** and **Loyal Customers** are fewer in number but contribute most of the revenue
-- Segment distribution is highly imbalanced, supporting targeted re-engagement strategies
-
 ---
 
-## 🔎 Final Conclusion & Recommendations
-👉 Based on the RFM analysis, we recommend the **Marketing & Sales team** to:
+## 7. 💡 Insight & Recommendation
 
-### 📌 Key Actions
+From the four analysis charts on contribution, monetary, recency, and frequency for each segment, we can analyze the behavior of the 11 segments as follows:
 
-✔️ **Retain Champions:**  
-   Offer VIP programs, personalized rewards, and early access to new products.
+| Segment                 | Recency (R)             | Frequency (F)          | Monetary (M)           | **Characteristics** |
+|-------------------------|--------------------------|--------------------------|--------------------------|----------------------|
+| **Champions (18%)**      | **Very Low** (~35 days)   | **Very High** (~6.8x)     | **Very High** (~43% of revenue) | Best customers. Buy often and recently. Huge contribution to revenue. Should be prioritized for VIP treatment. |
+| **Loyal (10%)**          | Low (~62 days)            | High (~4.6x)              | High (~17%)               | Repeat customers with consistent spending. Should be maintained with loyalty programs. |
+| **Potential Loyalist (11%)** | Very Low (~49.9 days)      | Moderate (~2.4x)           | Medium (~5%)               | New customers showing potential. Encourage to convert to loyal with targeted offers. |
+| **Promising (4%)**       | Very Low (~50.4 days)     | Low (~1.2x)               | Low (~3%)                 | New/early-stage buyers. Educate and offer follow-up promotions. |
+| **New Customers (6%)**   | Very Low (~50.4 days)     | Very Low (~1.0x)          | Very Low (~1%)            | Just made their first purchase. Focus on onboarding & retention. |
+| **Need Attention (6%)**  | Low (~59.1 days)          | Medium (~2.7x)            | Moderate (~6%)            | Previously active, now slowing down. Send reminders or time-limited offers. |
+| **At Risk (11%)**        | High (~174 days)          | Moderate (~3.4x)          | High (~14%)               | Good spending history but have not returned in a while. Use reactivation campaigns. |
+| **Hibernating (15%)**    | High (~178.4 days)        | Low (~1.4x)               | Medium (~5%)              | Once active, now dormant. Try to reignite interest with updates or re-engagement. |
+| **Can't Lose Them (3%)** | Very High (~257.7 days)   | Low (~1.8x)               | Medium (~3%)              | Previously valuable but haven’t purchased recently. Personal outreach recommended. |
+| **Lost Customers (11%)** | **Very High** (~301.7 days) | **Very Low** (~1.1x)      | **Very Low** (~2%)        | Inactive for a long time. Low priority for retention; focus on acquiring new users. |
+| **About To Sleep (7%)**  | High (~116.9 days)        | Low (~1.3x)               | Low (~2%)                 | Slowing down. Try reactivation with urgency-based messages. |
 
-✔️ **Promote Loyal → Champions:**  
-   Encourage upsells with milestone-based rewards and targeted nudges.
+Based on the above analysis, we can see that some segments share similar characteristics. Therefore, we can group them into segment clusters for easier analysis and to propose suitable strategies as follows:
 
-✔️ **Re-activate At Risk / Hibernating:**  
-   Win-back campaigns with discounts, expiring vouchers, or “We miss you” messages.
+### **Group 1: High-Risk Customers (27%)**
+📌 **Includes:** Can't Lose Them (3%), At Risk (11%), About to Sleep (7%), Need Attention (6%)
 
-✔️ **Exclude Lost Customers** from paid targeting to reduce budget waste.
+💡 **Reason for grouping:**
 
-✔️ **Focus on Recency (R)** for Marketing → Re-engagement  
-✔️ **Focus on Monetary (M)** for Sales → Upselling high-value groups
+These customers previously showed moderate to high engagement but are now at risk of churning.  
+- **Recency** is high, ranging from ~60 to 250+ days  
+- **Purchase frequency** has dropped (1.3 – 3.4 orders on average)  
+- Some (e.g. *At Risk*) still contribute noticeably to revenue (~14%), but decline is evident  
+Without intervention, they are likely to disengage completely. Targeted reactivation campaigns are crucial.
 
+### **Group 2: Loyal & High-Value Customers (39%)**
+📌 **Includes:** Champions (18%), Loyal (10%), Potential Loyalist (11%)
+
+💡 **Reason for grouping:**
+
+These are the most valuable segments in terms of activity and revenue.  
+- **Recency** is low (~35–60 days) → recently active  
+- **Frequency** is high (2.4 – 6.8 orders)  
+- **Revenue contribution** is the highest (Champions = 43%, Loyal = 17%)  
+They have strong long-term potential. Retain and nurture through loyalty programs, exclusive offers, and personalized communication.
+
+### **Group 3: New & Developing Customers (10%)**
+📌 **Includes:** New Customers (6%), Promising (4%)
+
+💡 **Reason for grouping:**
+
+Customers who are new or starting to show early interest.  
+- **Recency** is low (~50 days), indicating recent engagement  
+- **Frequency** and **monetary** values are still low (~1.0–1.2 orders, ~1–3% revenue)  
+This group should be onboarded carefully and encouraged to make repeat purchases through education, follow-up emails, and first-time discounts.
+
+### **Group 4: Inactive & Lost Customers (24%)**
+📌 **Includes:** Hibernating (15%), Lost Customers (11%)
+
+💡 **Reason for grouping:**
+
+These customers are **disengaged for a long time** and show minimal purchasing behavior.  
+- **Recency** is very high (~180–300+ days)  
+- **Frequency** is low (~1.1–1.4), and **monetary value** is also minimal (~2–5%)  
+They are least likely to return organically. Consider whether to invest in win-back campaigns or focus on acquiring new users instead.
+
+### 📌 Strategic Marketing Recommendations
+
+- **Focus on retention**: Prioritize Champions and Loyal customers by offering VIP perks and loyalty programs.
+- **Reactivation campaigns**: Target At Risk and About to Sleep groups with time-sensitive discounts or personalized offers.
+- **Onboarding flows**: Engage New and Promising customers with educational content, follow-up emails, and incentives for second purchase.
+- **Evaluate investment**: Consider cost-effectiveness before investing in win-back campaigns for Lost or Hibernating customers.
+
+### 🎯 Key Metric to Prioritize: **Recency**
+
+Among the RFM metrics, **Recency** is the most actionable and should be prioritized by both Marketing and Sales teams.
+
+- **Why Recency matters**:
+  - It's the strongest indicator of current engagement.
+  - Customers who purchased recently are more likely to respond to marketing efforts.
+  - Easier to re-engage customers who bought in the last 30–60 days than those inactive for 6+ months.
+
+- **Actionable insights**:
+  - Use Recency to trigger automated remarketing flows (e.g., 14 days after last purchase).
+  - Monitor spikes in Recency among VIPs as early signs of churn.
+  - Segment campaigns based on recent activity: <30 days (active), 30–90 (warm), >90 (cold).
+
+💡 While Frequency and Monetary are important for long-term strategy and segmentation, **Recency** offers the best leverage for short-term revenue growth and customer retention.
 ---
