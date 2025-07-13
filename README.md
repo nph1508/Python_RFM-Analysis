@@ -354,4 +354,5 @@ Among the RFM metrics, **Recency** is the most actionable and should be prioriti
   - Segment campaigns based on recent activity: <30 days (active), 30–90 (warm), >90 (cold).
 
 💡 While Frequency and Monetary are important for long-term strategy and segmentation, **Recency** offers the best leverage for short-term revenue growth and customer retention.
+
 ---
